@@ -24,26 +24,25 @@ typeset -A CONFIG=(
 )
 
 function main() {
-    read_params $@
+    read_params "$@"
     log_debug "Launch Project $(log_color "${PROJECT_NAME} : v${PROJECT_VERSION}" "magenta")"
 
-    while [ -z ${CONFIG[registry]} ]; do
+    while [ -z "${CONFIG[registry]}" ]; do
         CONFIG+=([registry]=$(ask_registry))
 
-        if [ -z ${CONFIG[registry]} ]; then
+        if [ -z "${CONFIG[registry]}" ]; then
             log no registry set please retry
         fi
     done
 
     ## program execution
-    run $@
+    run "$@"
 }
 
 ###
 # Run script
 ###
 function run {
-    args=("$@")
     log_debug "Registry value: ${CONFIG[registry]}"
 
     ## TODO pour distinguer le type
@@ -74,8 +73,9 @@ get_images() {
     # si librairy url="https://hub.docker.com/v2/repositories/library/${CONFIG[registry]}/tags?page_size=25&ordering=last_updated"
     # sinon url="https://hub.docker.com/v2/repositories/${CONFIG[registry]}?page_size=25&ordering=last_updated"
     url="https://hub.docker.com/v2/repositories/${CONFIG[registry]}?page_size=25&ordering=last_updated"
-    log $url
-    curl -sS $url |
+    log "${url}"
+
+    curl -sS "${url}" |
         grep -Po '"name":.*?[^\\]",' |
         awk -F'"' '$2 != "latest" {print $4}'
 }
@@ -102,7 +102,7 @@ function get_image_tags() {
 ###
 function ask_registry() {
     read -p "What registry do you want to read images (Ex: ${CONFIG[default_registry]}) : " registry
-    echo $registry
+    echo "${registry}"
 }
 
 ################################################################### Params Scripts ###################################################################
@@ -163,16 +163,16 @@ function active_debug_mode {
 # Return parent folder name in lowercase
 ###
 function get_parent_folder {
-    folder=$(basename $(pwd))
-    folder_lower=$(echo $folder | tr '[:upper:]' '[:lower:]')
-    echo $folder_lower
+    folder=$(basename "$(pwd)")
+    folder_lower=$(echo "$folder" | tr '[:upper:]' '[:lower:]')
+    echo "${folder_lower}"
 }
 
 ###
 # Return datetime of now (ex: 2022-01-10 23:20:35)
 ###
 function get_datetime {
-    log $(date '+%Y-%m-%d %H:%M:%S')
+    log "$(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 ###
@@ -195,7 +195,7 @@ function ask_yes_no {
 # Simple log function to support color
 ###
 function log {
-    echo -e $@
+    echo -e "$@"
 }
 
 typeset -A COLORS=(
@@ -226,16 +226,18 @@ typeset -A COLORS=(
 function log_color {
     message=$1
     color=$2
-    log ${COLORS[$color]}$message${COLORS[nc]}
+    log "${COLORS[$color]}""$message""${COLORS[nc]}"
 }
 
 ###
 # Log the message if debug mode is activated
 ###
 function log_debug {
-    message=$@
+    message=("$@")
     date=$(get_datetime)
-    if [ "${CONFIG[debug]}" = true ]; then log_color "[$date] $message" ${CONFIG[debug_color]}; fi
+
+    msg="[${date}] ${message}"
+    if [ "${CONFIG[debug]}" = "true" ]; then log_color "$msg" "${CONFIG[debug_color]}"; fi
 }
 
-main $@
+main "$@"
